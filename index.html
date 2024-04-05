@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Amazon CSV to JSON Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+        }
+
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+
+        button {
+            margin-top: 10px;
+        }
+
+        textarea {
+            margin-top: 10px;
+            width: 100%;
+            height: 400px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Automatically put amazon cart in file maker PO database</h1>
+    <ul>
+        <li>Go to Your Amazon cart, export Cart to .CSV file from this <a
+                href="https://chromewebstore.google.com/detail/amazon-cart-exporter/olabgcgapnojmfnajlkgkfajpmjepjcc">free
+                chrome
+                extension</a></li>
+        <li>Upload the CSV file from the amazon cart here</li>
+        <li>Click the "Copy to Clipboard" button</li>
+        <li>Paste the JSON output into the "McMaster Import" on FileMaker</li>
+        <li>Click "Process order"</li>
+        <li>⚠Manually set the vendor to Amazon, since the button will have set it to McMaster Automatically</li>
+        <li>⚠Manually type sales tax total into file maker</li>
+    </ul>
+    Upload <a href="https://chromewebstore.google.com/detail/amazon-cart-exporter/">CSV file</a> here: <input
+        type="file" id="csvFile" accept=".csv">
+
+    <br>
+    <button onclick="copyToClipboard()">Copy to Clipboard</button>
+    Here is the JSON output tp paste into McMaster Import on filemaker. Don't forget to manually set the vendor to
+    Amazon, since the button will set it to McMaster!
+    <textarea id="jsonOutput" rows="200" cols="50"></textarea>
+
+
+    <script>
+        function convertCsvToJson() {
+            const file = document.getElementById('csvFile').files[0];
+            if (!file) {
+                alert('Please select a file!');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const csvData = event.target.result;
+                const lines = csvData.split('\n');
+                const result = [];
+
+                for (let i = 1; i < lines.length; i++) {
+                    const currentLine = lines[i].split(',');
+                    if (currentLine.length < 7) continue;
+
+                    const unitPrice = parseFloat(currentLine[5].replace(' USD', ''));
+                    if (isNaN(unitPrice)) continue;
+                    const sku = currentLine[3];
+                    const url = "https://www.amazon.com/dp/" + sku//currentLine[1];
+                    const qty = currentLine[4];
+                    const desc = currentLine[2];
+
+                    const obj = {
+                        "Line": i,
+                        "Quantity": qty,
+                        "UnitofMeasure": "IgnoredValue",
+                        "Product": url,
+                        "Description": desc,
+                        "Estimate": "IgnoredValue",
+                        "UnitPrice": unitPrice,
+                        "Total": "IgnoredValue"
+                    };
+                    result.push(obj);
+                }
+
+                document.getElementById('jsonOutput').value = JSON.stringify(result, null, 2);
+            };
+
+            reader.readAsText(file);
+        }
+
+        function copyToClipboard() {
+            const copyText = document.getElementById("jsonOutput");
+            copyText.select();
+            document.execCommand("copy");
+            alert("Copied the text: " + copyText.value);
+        }
+    </script>
+</body>
+
+</html>
+
+<!-- 
+    INPUT FORMAT:
+    #,Link,Title,SKU,Quantity,Unit Price,Price
+1,https://www.amazon.com//gp/product/B074MDM36N/ref=ox_sc_act_title_delete_1?smid=A3DIXHTZKX9E9Q&psc=1,Seeed Studio
+Grove - 4 pin Female Jumper to Grove 4 pin Conversion Cable (5 PCs per PAck),B074MDM36N,1,16.95 USD,16.95 USD -->
+
+
+<!-- 
+    OUTPUT FORMAT
+    [
+  {
+    "Line": "1",
+    "Quantity": "1",
+    "UnitofMeasure": "IgnoredValue",
+    "Product": "https://www.amazon.com//gp/product/B074MDM36N/ref=ox_sc_act_title_delete_1?smid=A3DIXHTZKX9E9Q&psc=1",
+    "Description": "Seeed Studio Grove - 4 pin Female Jumper to Grove 4 pin Conversion Cable (5 PCs per PAck)",
+    "Estimate": "IgnoredValue",
+    "UnitPrice": "16.95 USD",
+    "Total": "IgnoredValue"
+  },
+  {
+    "Line": "2",
+    "Quantity": "1",
+    "UnitofMeasure": "IgnoredValue",
+    "Product": "https://www.amazon.com//gp/product/B01EV70C78/ref=ox_sc_act_title_delete_2?smid=A2WWHQ25ENKVJ1&psc=1",
+    "Description": "ELEGOO 120pcs Multicolored Dupont Wire 40pin Male to Female | 40pin Male to Male | 40pin Female to Female Breadboard Jumper Ribbon Cables Kit Compatible with Arduino Projects",
+    "Estimate": "IgnoredValue",
+    "UnitPrice": "6.98 USD",
+    "Total": "IgnoredValue"
+  }
+] -->
