@@ -44,7 +44,7 @@
         <li>⚠Manually type sales tax total into file maker</li>
     </ul>
     Upload <a href="https://chromewebstore.google.com/detail/amazon-cart-exporter/">CSV file</a> here: <input
-        type="file" id="csvFile" accept=".csv">
+        type="file" id="csvFile" accept=".csv" onchange="convertCsvToJson()">
 
     <br>
     <button onclick="copyToClipboard()">Copy to Clipboard</button>
